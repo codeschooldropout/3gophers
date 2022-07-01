@@ -3,7 +3,7 @@
 The next line doesn't have to be blank now.
 This line can't be blank if the previous line is. Two lines above this has to be blank but two lines below can not be.
 
-But they are not the same line. Markdown scheme is weird.
+But they are not the same line. Markdown linting is weird.
 
 ## Description
 
@@ -11,7 +11,7 @@ But they are not the same line. Markdown scheme is weird.
 
 ## Goals
 
-- This will end up being a TUI with a web interface and maybe available over SSH (I really just need something to make to learn go and play with charm.sh libraries
+- This will end up being a TUI with a web interface and maybe available over SSH (I really just need something to make to learn go and play with charm.sh libraries)
 
 ## Feature List
 
