@@ -32,8 +32,7 @@ func init() {
 	Raw = log.New(rawfile, "", log.LstdFlags)
 
 	Log.Println("Logit initialized: " + logfile.Name())
-	Raw.Println("Logit initialized: " + rawfile.Name())
-
+	Log.Println("Raw log initialized: " + rawfile.Name())
 }
 
 // Seperator prints line separator to the log object
