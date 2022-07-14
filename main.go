@@ -11,12 +11,118 @@ import (
 	"strconv"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/codeschooldropout/3gophers/logit"
+	"github.com/evertras/bubble-table/table"
 )
 
 const (
 	VERSION = "0.0.2"
+
+	columnKeyCall            = "call"
+	columnKeyPosition        = "position"
+	columnKeyPrice           = "price"
+	columnKeyPNL             = "pnl"
+	columnKeyBars            = "bars"
+	columnKeyStopLoss        = "sl"
+	columnKeyStopLossPercent = "slp"
+	columnKeyExchange        = "exchange"
+	columnKeyBase            = "base"
+	columnKeyQuote           = "quote"
+	columnKeyTF              = "tf"
 )
+
+var (
+	styleSubtle = lipgloss.NewStyle().Foreground(lipgloss.Color("#888"))
+
+	styleBase = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#fff")).
+			BorderForeground(lipgloss.Color("#888")).
+			Align(lipgloss.Right)
+)
+
+type Model struct {
+	alertTable table.Model
+}
+
+func makeRow(alert Alert) table.Row {
+	return table.NewRow(table.RowData{
+		columnKeyCall:            alert.Call,
+		columnKeyPosition:        alert.Position,
+		columnKeyPrice:           alert.Price,
+		columnKeyPNL:             alert.PNL,
+		columnKeyBars:            alert.Bars,
+		columnKeyStopLoss:        alert.StopLoss,
+		columnKeyStopLossPercent: alert.StopLossPercent,
+		columnKeyExchange:        alert.Asset.Exchange,
+		columnKeyBase:            alert.Asset.Base,
+		columnKeyQuote:           alert.Asset.Quote,
+		columnKeyTF:              alert.Asset.Timeframe,
+	})
+}
+
+func newModel() Model {
+	return Model{
+		alertTable: table.New([]table.Column{
+			table.NewColumn(columnKeyCall, "Call", 13),
+			table.NewColumn(columnKeyPosition, "Position", 10),
+			table.NewColumn(columnKeyPrice, "Price", 5),
+			table.NewColumn(columnKeyPNL, "PNL", 5),
+			table.NewColumn(columnKeyBars, "Bars", 5),
+			table.NewColumn(columnKeyStopLoss, "SL", 5),
+			table.NewColumn(columnKeyStopLossPercent, "SLP", 5),
+			table.NewColumn(columnKeyExchange, "Exchange", 10),
+			table.NewColumn(columnKeyBase, "Base", 10),
+			table.NewColumn(columnKeyQuote, "Quote", 10),
+			table.NewColumn(columnKeyTF, "TF", 10),
+		}).WithRows([]table.Row{
+			makeRow(*NewAlert("exit", "short", 63.44, 0.78, 49, 0, 0, *NewAsset("COINBASE", "ATOM", "USD", "5m"))),
+			makeRow(*NewAlert("exit", "short", 63.44, 0.78, 49, 0, 0, *NewAsset("COINBASE", "ATOM", "USD", "5m"))),
+			makeRow(*NewAlert("exit", "short", 63.44, 0.78, 49, 0, 0, *NewAsset("COINBASE", "ATOM", "USD", "5m"))),
+		}).
+			BorderRounded().
+			WithBaseStyle(styleBase).
+			WithPageSize(6).
+			Focused(true),
+	}
+}
+
+func (m Model) Init() tea.Cmd {
+	return nil
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
+
+	m.alertTable, cmd = m.alertTable.Update(msg)
+	cmds = append(cmds, cmd)
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "esc", "q":
+			cmds = append(cmds, tea.Quit)
+		}
+	}
+
+	return m, tea.Batch(cmds...)
+
+}
+
+func (m Model) View() string {
+	selected := m.alertTable.HighlightedRow().Data[columnKeyCall].(string)
+	view := lipgloss.JoinVertical(
+		lipgloss.Left,
+		styleSubtle.Render("press q/esc/ctrl+c to quit"),
+		styleSubtle.Render("Hilighted: "+selected),
+		m.alertTable.View(),
+	) + "\n"
+	return lipgloss.NewStyle().UnsetMarginLeft().Render(view)
+}
 
 type Asset struct {
 	Exchange  string `json:"exchange"`  // 1. kucoin 2. kraken 3. coinbase - these are the ones i want to start with if possible.
@@ -33,6 +139,30 @@ type Alert struct {
 	StopLoss        float64 `json:"sl,omitempty"`       // Stop loss price to set on entry signal
 	StopLossPercent float64 `json:"slp,omitempty"`      // Stop loss percent to set on entry signal
 	Asset           Asset   `json:"asset,omitempty"`    // Asset to trade
+}
+
+// create a new alert
+func NewAlert(call string, position string, price float64, pnl float64, bars int, stopLoss float64, stopLossPercent float64, asset Asset) *Alert {
+	return &Alert{
+		Call:            call,
+		Position:        position,
+		Price:           price,
+		PNL:             pnl,
+		Bars:            bars,
+		StopLoss:        stopLoss,
+		StopLossPercent: stopLossPercent,
+		Asset:           asset,
+	}
+}
+
+// create a new asset
+func NewAsset(exchange string, base string, quote string, timeframe string) *Asset {
+	return &Asset{
+		Exchange:  exchange,
+		Base:      base,
+		Quote:     quote,
+		Timeframe: timeframe,
+	}
 }
 
 func handleRP(w http.ResponseWriter, r *http.Request) {
@@ -200,9 +330,18 @@ func handleJSON(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	go startHTTPServer()
+
+	p := tea.NewProgram(newModel())
+	if err := p.Start(); err != nil {
+		logit.Log.Fatal(err)
+	}
+}
+
+func startHTTPServer() {
+
 	// Create a new server
 	// TODO Use https://github.com/julienschmidt/httprouter for routing
-
 	logit.Log.Println("Listening on port 8080")
 	logit.Log.Printf("Server v%s pid=%d started with processes: %d", VERSION, os.Getpid(), runtime.GOMAXPROCS(runtime.NumCPU()))
 
