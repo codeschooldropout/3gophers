@@ -1,4 +1,4 @@
-package signals 
+package signals
 
 import (
 	"encoding/json"
@@ -194,4 +194,28 @@ func HandleTradingViewJSON(w http.ResponseWriter, r *http.Request) {
 
 	webhookDataBytes, _ := json.Marshal(webhookData)
 	w.Write([]byte(webhookDataBytes))
+}
+
+// create a new alert
+func NewAlert(call string, position string, price float64, pnl float64, bars int, stopLoss float64, stopLossPercent float64, asset Asset) *Alert {
+	return &Alert{
+		Call:            call,
+		Position:        position,
+		Price:           price,
+		PNL:             pnl,
+		Bars:            bars,
+		StopLoss:        stopLoss,
+		StopLossPercent: stopLossPercent,
+		Asset:           asset,
+	}
+}
+
+// create a new asset
+func NewAsset(exchange string, base string, quote string, timeframe string) *Asset {
+	return &Asset{
+		Exchange:  exchange,
+		Base:      base,
+		Quote:     quote,
+		Timeframe: timeframe,
+	}
 }

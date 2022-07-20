@@ -9,9 +9,12 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/codeschooldropout/3gophers/internal/logit"
 	"github.com/codeschooldropout/3gophers/internal/signals"
+	"github.com/codeschooldropout/3gophers/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -21,20 +24,26 @@ var listenCmd = &cobra.Command{
 	Short: "Starts the listening server to capture calls from tradingview",
 	Long:  `Starts the listening server to capture indicator calls from tradingview and process their signals `,
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("args %v", args)
 		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 		fmt.Println("listen called on port", port)
-		startHTTPServer(port)
+		go startHTTPServer(port)
+
+		p := tea.NewProgram(ui.NewModel())
+		if err := p.Start(); err != nil {
+			logit.Log.Fatal(err)
+		}
 
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(listenCmd)
-	listenCmd.PersistentFlags().IntP("port", "p", 4000, "Run listener on specified port")
+	listenCmd.PersistentFlags().IntP("port", "p", 8080, "Run listener on specified port")
 }
 
 func startHTTPServer(port int) {
@@ -46,5 +55,5 @@ func startHTTPServer(port int) {
 
 	http.HandleFunc("/RP/", signals.HandleTradingViewRP)
 	http.HandleFunc("/json/", signals.HandleTradingViewJSON)
-	logit.Log.Fatal(http.ListenAndServe(":8080", nil))
+	logit.Log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), nil))
 }
