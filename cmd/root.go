@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 codeschooldropout code@cay.io
-
 */
 package cmd
 
@@ -11,14 +10,14 @@ import (
 )
 
 var (
-	Version = "0.0.3"
+	Version = "0.0.8"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "3gophers",
 	Short: "My own personal bloomberg terminal or something",
-	Long:  `3gopher is a terminal application that allows you to interact 
+	Long: `3gopher is a terminal application that allows you to interact 
 	with tradingview webhooks and act on them with other apis. Additionally,
 	it can be used to show various information about the market and your portfolio.`,
 	// Uncomment the following line if your bare application

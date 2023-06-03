@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 codeschooldropout code@cay.io
-
 */
 package main
 
