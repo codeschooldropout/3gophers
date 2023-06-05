@@ -15,7 +15,6 @@ const (
 	columnKeyInterval  = "interval"
 	columnKeyPosition  = "position"
 	columnKeyTimeNow   = "timenow"
-	columnKeyAsset     = "asset"
 )
 
 var (
@@ -40,7 +39,7 @@ func makeRow(alert signals.Alert) table.Row {
 		columnKeyInterval:  alert.Interval,
 		columnKeyPosition:  alert.Position,
 		columnKeyTimeNow:   alert.TimeNow,
-		columnKeyAsset:     alert.Asset,
+		// columnKeyAsset:     alert.Asset,
 	})
 }
 
@@ -55,7 +54,7 @@ func NewModel() Model {
 			table.NewColumn(columnKeyPosition, "Position", 13),
 			table.NewColumn(columnKeyTimeNow, "TimeNow", 13),
 		}).WithRows([]table.Row{
-			makeRow(*signals.NewAlert("", 0, 0, "", 0, 0, "", *signals.NewAsset("", "", "", ""))),
+			makeRow(*signals.NewAlert("", 0, 0, "", 0, 0, "")),
 		}).
 			BorderRounded().
 			WithBaseStyle(styleBase).
@@ -82,9 +81,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "esc", "q":
 			cmds = append(cmds, tea.Quit)
+		case "a":
+			// Add a new record when "a" is pressed
+
 		}
 	}
-
 	return m, tea.Batch(cmds...)
 
 }

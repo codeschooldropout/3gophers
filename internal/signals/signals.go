@@ -2,6 +2,7 @@ package signals
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/codeschooldropout/3gophers/internal/logit"
@@ -31,24 +32,33 @@ type Alert struct {
 
 func HandleTradingViewJSON(w http.ResponseWriter, r *http.Request) {
 	// Process the signal from TradingView
-	// json payload
-	// {
-	// 	"order":"{{strategy.order.action}}",
-	// 	"contracts":"{{strategy.order.contracts}}",
-	// 	"price":"{{strategy.order.price}}",
-	// 	"ticker":"{{ticker}}",
-	// 	"interval":"{{interval}}",
-	// 	"position":"{{strategy.position_size}}",
-	// 	"timenow":"{{timenow}}"
-	// }
 
-	//fmt.Printf("Headers: %v\n", r.Header)
-	webhookData := make(map[string]interface{})
-	err := json.NewDecoder(r.Body).Decode(&webhookData)
+	// Create a new alert to handle incoming data
+	var alert Alert
+
+	err := json.NewDecoder(r.Body).Decode(&alert)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// print the alert to the console
+	fmt.Printf("alert: %v\n", alert)
+
+	// Convert the alert back to JSON for the response
+	alertBytes, err := json.Marshal(alert)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// respond with 200 OK
+	w.WriteHeader(http.StatusOK)
+
+	// w.Write([]byte(alertBytes))
+
+	//fmt.Printf("Headers: %v\n", r.Header)
+	// webhookData := make(map[string]interface{})
 
 	// Output Examples
 	//fmt.Printf("%#v\n", webhookData)
@@ -58,20 +68,19 @@ func HandleTradingViewJSON(w http.ResponseWriter, r *http.Request) {
 	// 	fmt.Println("key: ", k, "value: ", v)
 	// }
 
-	webhookDataBytes, _ := json.Marshal(webhookData)
-	w.Write([]byte(webhookDataBytes))
+	// webhookDataBytes, _ := json.Marshal(webhookData)
+	// w.Write([]byte(webhookDataBytes))
 
-	// print alert to console
 	err2 := beeep.Beep(beeep.DefaultFreq, beeep.DefaultDuration)
 	if err2 != nil {
 		panic(err)
 	}
 
-	logit.Log.Printf("webhookData: %s", webhookData)
+	logit.Log.Printf("alertBytes: %s", alertBytes)
 }
 
 // create a new alert
-func NewAlert(order string, contracts float64, price float64, ticker string, interval int, position float64, timenow string, asset Asset) *Alert {
+func NewAlert(order string, contracts float64, price float64, ticker string, interval int, position float64, timenow string) *Alert {
 	return &Alert{
 		Order:     order,
 		Contracts: contracts,
@@ -80,16 +89,16 @@ func NewAlert(order string, contracts float64, price float64, ticker string, int
 		Interval:  interval,
 		Position:  position,
 		TimeNow:   timenow,
-		Asset:     asset,
+		// Asset:     asset,
 	}
 }
 
-// create a new asset
-func NewAsset(exchange string, base string, quote string, timeframe string) *Asset {
-	return &Asset{
-		Exchange:  exchange,
-		Base:      base,
-		Quote:     quote,
-		Timeframe: timeframe,
-	}
-}
+// // create a new asset
+// func NewAsset(exchange string, base string, quote string, timeframe string) *Asset {
+// 	return &Asset{
+// 		Exchange:  exchange,
+// 		Base:      base,
+// 		Quote:     quote,
+// 		Timeframe: timeframe,
+// 	}
+// }
